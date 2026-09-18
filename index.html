@@ -153,7 +153,10 @@
   <div class="app-header">
     <div class="app-header-top">
       <div class="app-title">🍼 Baby Tracker</div>
-      <button class="btn-logout" onclick="handleLogout()">Ausloggen</button>
+      <div style="display:flex;gap:8px;align-items:center">
+        <button onclick="loadAllData()" style="background:none;border:none;font-size:20px;cursor:pointer;padding:4px">🔄</button>
+        <button class="btn-logout" onclick="handleLogout()">Ausloggen</button>
+      </div>
     </div>
     <div class="timer-bar">
       <span class="timer-label">Letzte Session</span>
