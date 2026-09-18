@@ -518,12 +518,14 @@ function updateSummary(entries) {
 function updateNextHint(entries) {
   if (!entries.length) { document.getElementById('next-hint').style.display = 'none'; return; }
   const last = entries[0];
-  // Beide Brüste gestillt → nächste Session beginnt mit second_breast
-  // Nur eine Brust → nächste Session beginnt mit der anderen Seite
-  const lastBreast = last.second_breast 
-    ? last.second_breast 
-    : (last.first_breast === 'links' ? 'rechts' : 'links');
-  const next = lastBreast === 'links' ? 'Rechts' : 'Links';
+  // Beide Brüste gestillt → nächste Session = second_breast (direkt, keine Umkehrung)
+  // Nur eine Brust → nächste Session = andere Seite von first_breast
+  let next;
+  if (last.second_breast) {
+    next = last.second_breast === 'links' ? 'Links' : 'Rechts';
+  } else {
+    next = last.first_breast === 'links' ? 'Rechts' : 'Links';
+  }
   document.getElementById('next-hint').style.display = 'flex';
   document.getElementById('next-hint-text').innerHTML = 'Nächste Session: <strong>' + next + ' zuerst</strong>';
 }
