@@ -1,0 +1,864 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Baby Tracker</title>
+<link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%237DBFB2'/><text y='.9em' font-size='72' x='12'>🍼</text></svg>">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Baby Tracker">
+<style>
+  :root {
+    --beige: #F5F0E8;
+    --beige-dark: #EDE6D6;
+    --beige-border: #D4C9B0;
+    --mint: #7DBFB2;
+    --mint-light: #E8F4F2;
+    --mint-dark: #5A9E92;
+    --brown: #6B5744;
+    --brown-light: #8C7260;
+    --text: #3D2E22;
+    --text-muted: #8C7A6B;
+    --white: #FDFBF7;
+    --shadow: 0 2px 12px rgba(107,87,68,0.10);
+    --radius: 16px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  body {
+    background: var(--beige);
+    font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', sans-serif;
+    color: var(--text);
+    min-height: 100vh;
+    padding-bottom: 40px;
+  }
+
+  /* LOGIN */
+  #login-screen {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    padding: 32px 24px;
+  }
+  .login-card {
+    background: var(--white);
+    border-radius: var(--radius);
+    padding: 40px 28px;
+    width: 100%;
+    max-width: 400px;
+    box-shadow: var(--shadow);
+    text-align: center;
+  }
+  .login-emoji { font-size: 48px; margin-bottom: 12px; }
+  .login-title { font-size: 22px; font-weight: 600; color: var(--text); margin-bottom: 6px; }
+  .login-sub { font-size: 14px; color: var(--text-muted); margin-bottom: 32px; }
+  .input-field {
+    width: 100%;
+    padding: 14px 16px;
+    border: 1.5px solid var(--beige-border);
+    border-radius: 12px;
+    font-size: 16px;
+    background: var(--beige);
+    color: var(--text);
+    margin-bottom: 12px;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  .input-field:focus { border-color: var(--mint); }
+  .btn-primary {
+    width: 100%;
+    padding: 16px;
+    background: var(--mint);
+    color: white;
+    border: none;
+    border-radius: 12px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s;
+    margin-top: 4px;
+  }
+  .btn-primary:active { background: var(--mint-dark); }
+  .btn-secondary {
+    background: transparent;
+    color: var(--mint-dark);
+    border: 1.5px solid var(--mint);
+    width: 100%;
+    padding: 14px;
+    border-radius: 12px;
+    font-size: 15px;
+    cursor: pointer;
+    margin-top: 10px;
+  }
+  .login-msg { font-size: 13px; color: var(--text-muted); margin-top: 14px; min-height: 20px; }
+  .login-msg.error { color: #c0392b; }
+  .login-msg.success { color: var(--mint-dark); }
+
+  /* MAIN APP */
+  #app-screen { display: none; }
+
+  .app-header {
+    background: var(--white);
+    padding: 16px 20px 12px;
+    border-bottom: 1px solid var(--beige-border);
+    position: sticky;
+    top: 0;
+    z-index: 10;
+  }
+  .app-header-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 12px;
+  }
+  .app-title { font-size: 18px; font-weight: 700; color: var(--text); }
+  .btn-logout {
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    font-size: 13px;
+    cursor: pointer;
+    padding: 4px 8px;
+  }
+
+  /* TIMER */
+  .timer-bar {
+    background: var(--beige-dark);
+    border-radius: 10px;
+    padding: 8px 14px;
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+  }
+  .timer-label { font-size: 12px; color: var(--text-muted); }
+  .timer-value { font-size: 16px; font-weight: 700; color: var(--mint-dark); }
+
+  /* TAGESÜBERSICHT */
+  .day-summary {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+  }
+  .summary-pill {
+    background: var(--mint-light);
+    border-radius: 10px;
+    padding: 8px 6px;
+    text-align: center;
+  }
+  .summary-pill .pill-val {
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--mint-dark);
+    display: block;
+  }
+  .summary-pill .pill-label {
+    font-size: 10px;
+    color: var(--text-muted);
+    display: block;
+    margin-top: 2px;
+  }
+
+  /* NEXT BREAST HINT */
+  .next-hint {
+    background: var(--beige-dark);
+    border-radius: 10px;
+    padding: 10px 14px;
+    margin: 14px 16px 0;
+    font-size: 13px;
+    color: var(--brown);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .next-hint strong { color: var(--text); }
+
+  /* FORM */
+  .form-container { padding: 16px; }
+  .card {
+    background: var(--white);
+    border-radius: var(--radius);
+    padding: 20px;
+    margin-bottom: 14px;
+    box-shadow: var(--shadow);
+  }
+  .card-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 14px;
+  }
+
+  /* DATETIME */
+  .datetime-row {
+    display: grid;
+    grid-template-columns: 1.7fr 1fr;
+    gap: 10px;
+  }
+  @media (max-width: 380px) {
+    .datetime-row { grid-template-columns: 1fr; }
+  }
+  .datetime-row .input-field { margin-bottom: 0; }
+
+  /* ZEIT VIERTELSTUNDEN */
+  .time-select {
+    width: 100%;
+    padding: 14px 16px;
+    border: 1.5px solid var(--beige-border);
+    border-radius: 12px;
+    font-size: 16px;
+    background: var(--beige);
+    color: var(--text);
+    outline: none;
+    appearance: none;
+    -webkit-appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%238C7A6B' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 14px center;
+  }
+  .time-select:focus { border-color: var(--mint); }
+
+  /* BRUST AUSWAHL */
+  .breast-section { margin-bottom: 16px; }
+  .breast-label { font-size: 12px; color: var(--text-muted); margin-bottom: 8px; font-weight: 500; }
+  .breast-toggle { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .breast-btn {
+    padding: 14px 8px;
+    border: 2px solid var(--beige-border);
+    border-radius: 12px;
+    background: var(--beige);
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: all 0.15s;
+    text-align: center;
+  }
+  .breast-btn.selected { border-color: var(--mint); background: var(--mint-light); color: var(--mint-dark); }
+
+  /* STERNE */
+  .stars-row { display: flex; gap: 8px; margin-top: 6px; }
+  .star-btn {
+    width: 44px; height: 44px;
+    border: 2px solid var(--beige-border);
+    border-radius: 10px;
+    background: var(--beige);
+    font-size: 20px;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: all 0.15s;
+  }
+  .star-btn.selected { border-color: #E8A020; background: #FFF8EC; }
+
+  /* ZWEITE BRUST */
+  .second-breast-auto {
+    background: var(--mint-light);
+    border-radius: 10px;
+    padding: 10px 14px;
+    font-size: 13px;
+    color: var(--mint-dark);
+    margin-bottom: 10px;
+  }
+  .skip-btn {
+    background: none;
+    border: 1.5px solid var(--beige-border);
+    border-radius: 10px;
+    padding: 10px 16px;
+    font-size: 13px;
+    color: var(--text-muted);
+    cursor: pointer;
+    width: 100%;
+    margin-top: 6px;
+  }
+  .skip-btn.skipped { background: var(--beige-dark); color: var(--brown-light); }
+
+  /* CHECKBOXEN */
+  .check-row {
+    display: flex; align-items: center; gap: 14px;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--beige-dark);
+  }
+  .check-row:last-child { border-bottom: none; }
+  .big-checkbox {
+    width: 44px; height: 44px;
+    border: 2px solid var(--beige-border);
+    border-radius: 10px;
+    background: var(--beige);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 22px;
+    cursor: pointer;
+    transition: all 0.15s;
+    flex-shrink: 0;
+  }
+  .big-checkbox.checked { border-color: var(--mint); background: var(--mint-light); }
+  .check-label { font-size: 16px; color: var(--text); font-weight: 500; }
+  .check-sub { font-size: 12px; color: var(--text-muted); }
+
+  /* TEMPERATUR */
+  .temp-row { display: flex; align-items: center; gap: 10px; padding-top: 14px; }
+  .temp-input {
+    width: 110px;
+    padding: 12px 14px;
+    border: 1.5px solid var(--beige-border);
+    border-radius: 12px;
+    font-size: 20px;
+    font-weight: 600;
+    background: var(--beige);
+    color: var(--text);
+    outline: none;
+    text-align: center;
+  }
+  .temp-input:focus { border-color: var(--mint); }
+  .temp-unit { font-size: 16px; color: var(--text-muted); }
+
+  /* BEMERKUNG */
+  .notes-field {
+    width: 100%;
+    padding: 14px;
+    border: 1.5px solid var(--beige-border);
+    border-radius: 12px;
+    font-size: 15px;
+    background: var(--beige);
+    color: var(--text);
+    resize: none;
+    height: 80px;
+    outline: none;
+    font-family: inherit;
+  }
+  .notes-field:focus { border-color: var(--mint); }
+
+  /* SUBMIT */
+  .btn-save {
+    width: 100%;
+    padding: 18px;
+    background: var(--mint);
+    color: white;
+    border: none;
+    border-radius: 14px;
+    font-size: 17px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background 0.2s;
+    margin-bottom: 8px;
+  }
+  .btn-save:active { background: var(--mint-dark); }
+  .save-msg { text-align: center; font-size: 13px; color: var(--text-muted); min-height: 20px; }
+  .save-msg.success { color: var(--mint-dark); }
+  .save-msg.error { color: #c0392b; }
+
+  /* EINTRÄGE */
+  .entries-section { padding: 0 16px 16px; }
+  .entries-title {
+    font-size: 13px; font-weight: 600;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 10px;
+  }
+  .entry-card {
+    background: var(--white);
+    border-radius: 12px;
+    padding: 14px 16px;
+    margin-bottom: 10px;
+    box-shadow: var(--shadow);
+  }
+  .entry-time { font-size: 12px; color: var(--text-muted); margin-bottom: 6px; }
+  .entry-breasts { font-size: 15px; font-weight: 600; color: var(--text); margin-bottom: 4px; }
+  .entry-badges { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 6px; }
+  .badge { background: var(--beige-dark); border-radius: 6px; padding: 3px 8px; font-size: 12px; color: var(--brown); }
+  .badge.mint { background: var(--mint-light); color: var(--mint-dark); }
+
+  /* HISTORISCHE TAGE */
+  .history-section { padding: 0 16px 16px; }
+  .history-title {
+    font-size: 13px; font-weight: 600;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 10px;
+    margin-top: 8px;
+  }
+  .day-accordion {
+    background: var(--white);
+    border-radius: 12px;
+    margin-bottom: 10px;
+    box-shadow: var(--shadow);
+    overflow: hidden;
+  }
+  .day-accordion-header {
+    padding: 14px 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    cursor: pointer;
+    user-select: none;
+  }
+  .day-accordion-header:active { background: var(--beige); }
+  .day-accordion-date { font-size: 15px; font-weight: 600; color: var(--text); }
+  .day-accordion-pills { display: flex; gap: 8px; align-items: center; }
+  .day-pill { font-size: 12px; color: var(--text-muted); }
+  .day-accordion-arrow { font-size: 12px; color: var(--text-muted); transition: transform 0.2s; }
+  .day-accordion-arrow.open { transform: rotate(90deg); }
+  .day-accordion-body { display: none; border-top: 1px solid var(--beige-dark); padding: 12px 16px; }
+  .day-accordion-body.open { display: block; }
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="login-screen">
+  <div class="login-card">
+    <div class="login-emoji">🍼</div>
+    <div class="login-title">Baby Tracker</div>
+    <div class="login-sub">Stillen · Wickeln · Gesundheit</div>
+    <input type="email" id="login-email" class="input-field" placeholder="E-Mail Adresse" autocomplete="email">
+    <input type="password" id="login-password" class="input-field" placeholder="Passwort" autocomplete="current-password">
+    <button class="btn-primary" onclick="handleLogin()">Einloggen</button>
+    <button class="btn-secondary" onclick="handleSignup()">Neues Konto erstellen</button>
+    <div class="login-msg" id="login-msg"></div>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app-screen">
+  <div class="app-header">
+    <div class="app-header-top">
+      <div class="app-title">🍼 Baby Tracker</div>
+      <button class="btn-logout" onclick="handleLogout()">Ausloggen</button>
+    </div>
+    <!-- TIMER -->
+    <div class="timer-bar">
+      <span class="timer-label">Letzte Session</span>
+      <span class="timer-value" id="timer-display">–</span>
+      <span class="timer-label">ago</span>
+    </div>
+    <!-- TAGESÜBERSICHT -->
+    <div class="day-summary">
+      <div class="summary-pill">
+        <span class="pill-val" id="sum-sessions">–</span>
+        <span class="pill-label">Stillsessions</span>
+      </div>
+      <div class="summary-pill">
+        <span class="pill-val" id="sum-stool">–</span>
+        <span class="pill-label">💩 Stuhlgang</span>
+      </div>
+      <div class="summary-pill">
+        <span class="pill-val" id="sum-urine">–</span>
+        <span class="pill-label">💧 Urin</span>
+      </div>
+      <div class="summary-pill">
+        <span class="pill-val" id="sum-vitd">–</span>
+        <span class="pill-label">Vitamin D</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- NÄCHSTE BRUST -->
+  <div class="next-hint" id="next-hint" style="display:none">
+    <span>➡️</span>
+    <span id="next-hint-text"></span>
+  </div>
+
+  <!-- FORMULAR -->
+  <div class="form-container">
+    <div class="card">
+      <div class="card-title">Zeitpunkt</div>
+      <div class="datetime-row">
+        <input type="date" id="entry-date" class="input-field" style="margin-bottom:0">
+        <select id="entry-time" class="time-select"></select>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Stillen</div>
+      <div class="breast-section">
+        <div class="breast-label">Erste Brust</div>
+        <div class="breast-toggle">
+          <button class="breast-btn" id="first-links" onclick="selectFirst('links')">👈 Links</button>
+          <button class="breast-btn" id="first-rechts" onclick="selectFirst('rechts')">Rechts 👉</button>
+        </div>
+        <div class="stars-row" id="stars-first-row">
+          <button class="star-btn" onclick="setStars('first',1)">⭐</button>
+          <button class="star-btn" onclick="setStars('first',2)">⭐</button>
+          <button class="star-btn" onclick="setStars('first',3)">⭐</button>
+        </div>
+      </div>
+      <div class="breast-section" id="second-breast-section" style="display:none">
+        <div class="breast-label">Zweite Brust</div>
+        <div class="second-breast-auto" id="second-auto-label">Automatisch: –</div>
+        <div class="stars-row" id="stars-second-row">
+          <button class="star-btn" onclick="setStars('second',1)">⭐</button>
+          <button class="star-btn" onclick="setStars('second',2)">⭐</button>
+          <button class="star-btn" onclick="setStars('second',3)">⭐</button>
+        </div>
+        <button class="skip-btn" id="skip-second-btn" onclick="toggleSkipSecond()">Zweite Brust überspringen (eingeschlafen)</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Wickeln</div>
+      <div class="check-row">
+        <div class="big-checkbox" id="cb-stool" onclick="toggleCheck('stool')">💩</div>
+        <div><div class="check-label">Stuhlgang</div><div class="check-sub">Beim Wickeln festgestellt</div></div>
+      </div>
+      <div class="check-row">
+        <div class="big-checkbox" id="cb-urine" onclick="toggleCheck('urine')">💧</div>
+        <div><div class="check-label">Urin</div><div class="check-sub">Beim Wickeln festgestellt</div></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Gesundheit</div>
+      <div class="check-row">
+        <div class="big-checkbox" id="cb-vitd" onclick="toggleCheck('vitd')">☀️</div>
+        <div><div class="check-label">Vitamin D</div><div class="check-sub">Heute gegeben</div></div>
+      </div>
+      <div class="check-row" style="border-bottom:none">
+        <div class="temp-row">
+          <input type="number" id="temp-input" class="temp-input" placeholder="–" step="0.1" min="35" max="42" inputmode="decimal">
+          <span class="temp-unit">°C</span>
+          <span style="font-size:13px;color:var(--text-muted);margin-left:4px">Temperatur (optional)</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Bemerkung</div>
+      <textarea id="notes-input" class="notes-field" placeholder="Optionale Notiz..."></textarea>
+    </div>
+
+    <button class="btn-save" onclick="saveEntry()">Session speichern</button>
+    <div class="save-msg" id="save-msg"></div>
+  </div>
+
+  <!-- HEUTIGE SESSIONS -->
+  <div class="entries-section">
+    <div class="entries-title">Heutige Sessions</div>
+    <div id="entries-list"></div>
+  </div>
+
+  <!-- HISTORISCHE TAGE -->
+  <div class="history-section">
+    <div class="history-title">Vergangene Tage</div>
+    <div id="history-list"></div>
+  </div>
+</div>
+
+<script>
+const SUPABASE_URL = 'https://agyvfkhxjwajpokqrphi.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_DXcjm6QSUX9h1QkkFM9y2g_Gpl8cZ8W';
+const API = SUPABASE_URL + '/rest/v1';
+const AUTH = SUPABASE_URL + '/auth/v1';
+
+let currentSession = null;
+let lastSessionTime = null;
+let timerInterval = null;
+let state = { firstBreast: null, starsFirst: 0, starsSecond: 0, stool: false, urine: false, vitd: false, skipSecond: false };
+
+// ZEIT-DROPDOWN MIT VIERTELSTUNDEN
+function buildTimeOptions() {
+  const sel = document.getElementById('entry-time');
+  const now = new Date();
+  const curH = now.getHours();
+  const curM = now.getMinutes();
+  const nearest = Math.round(curM / 15) * 15;
+  const nearestH = nearest === 60 ? (curH + 1) % 24 : curH;
+  const nearestM = nearest === 60 ? 0 : nearest;
+  for (let h = 0; h < 24; h++) {
+    for (let m of [0, 15, 30, 45]) {
+      const hh = String(h).padStart(2,'0');
+      const mm = String(m).padStart(2,'0');
+      const val = hh + ':' + mm;
+      const opt = document.createElement('option');
+      opt.value = val;
+      opt.textContent = val;
+      if (h === nearestH && m === nearestM) opt.selected = true;
+      sel.appendChild(opt);
+    }
+  }
+}
+
+// AUTH
+async function authFetch(url, options = {}) {
+  const headers = { 'apikey': SUPABASE_KEY, 'Content-Type': 'application/json', ...(options.headers || {}) };
+  if (currentSession?.access_token) headers['Authorization'] = 'Bearer ' + currentSession.access_token;
+  return fetch(url, { ...options, headers });
+}
+
+async function handleLogin() {
+  const email = document.getElementById('login-email').value.trim();
+  const password = document.getElementById('login-password').value;
+  const msg = document.getElementById('login-msg');
+  msg.textContent = 'Einloggen...'; msg.className = 'login-msg';
+  try {
+    const res = await fetch(AUTH + '/token?grant_type=password', {
+      method: 'POST',
+      headers: { 'apikey': SUPABASE_KEY, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password })
+    });
+    const data = await res.json();
+    if (data.access_token) { currentSession = data; showApp(); }
+    else { msg.textContent = data.error_description || 'Login fehlgeschlagen'; msg.className = 'login-msg error'; }
+  } catch(e) { msg.textContent = 'Verbindungsfehler'; msg.className = 'login-msg error'; }
+}
+
+async function handleSignup() {
+  const email = document.getElementById('login-email').value.trim();
+  const password = document.getElementById('login-password').value;
+  const msg = document.getElementById('login-msg');
+  msg.textContent = 'Konto erstellen...'; msg.className = 'login-msg';
+  try {
+    const res = await fetch(AUTH + '/signup', {
+      method: 'POST',
+      headers: { 'apikey': SUPABASE_KEY, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password })
+    });
+    const data = await res.json();
+    if (data.id || data.access_token) { msg.textContent = '✓ Konto erstellt. Bitte E-Mail bestätigen, dann einloggen.'; msg.className = 'login-msg success'; }
+    else { msg.textContent = data.msg || data.error_description || 'Fehler'; msg.className = 'login-msg error'; }
+  } catch(e) { msg.textContent = 'Verbindungsfehler'; msg.className = 'login-msg error'; }
+}
+
+function handleLogout() {
+  currentSession = null;
+  clearInterval(timerInterval);
+  document.getElementById('login-screen').style.display = 'flex';
+  document.getElementById('app-screen').style.display = 'none';
+}
+
+function showApp() {
+  document.getElementById('login-screen').style.display = 'none';
+  document.getElementById('app-screen').style.display = 'block';
+  buildTimeOptions();
+  setDefaultDate();
+  loadAllData();
+}
+
+function setDefaultDate() {
+  const now = new Date();
+  document.getElementById('entry-date').value = now.toISOString().split('T')[0];
+}
+
+// TIMER
+function startTimer() {
+  clearInterval(timerInterval);
+  timerInterval = setInterval(updateTimer, 10000);
+  updateTimer();
+}
+
+function updateTimer() {
+  const el = document.getElementById('timer-display');
+  if (!lastSessionTime) { el.textContent = '–'; return; }
+  const diff = Math.floor((Date.now() - new Date(lastSessionTime).getTime()) / 60000);
+  const h = Math.floor(diff / 60);
+  const m = diff % 60;
+  el.textContent = h > 0 ? h + 'h ' + m + 'min' : m + ' min';
+}
+
+// BRUST
+function selectFirst(side) {
+  state.firstBreast = side;
+  document.getElementById('first-links').classList.toggle('selected', side === 'links');
+  document.getElementById('first-rechts').classList.toggle('selected', side === 'rechts');
+  const secondLabel = side === 'links' ? 'Rechts 👉' : '👈 Links';
+  document.getElementById('second-auto-label').textContent = 'Automatisch: ' + secondLabel;
+  document.getElementById('second-breast-section').style.display = 'block';
+  state.skipSecond = false;
+  document.getElementById('skip-second-btn').classList.remove('skipped');
+  document.getElementById('skip-second-btn').textContent = 'Zweite Brust überspringen (eingeschlafen)';
+  document.getElementById('stars-second-row').style.opacity = '1';
+  document.getElementById('stars-second-row').style.pointerEvents = 'auto';
+}
+
+function toggleSkipSecond() {
+  state.skipSecond = !state.skipSecond;
+  state.starsSecond = 0;
+  const btn = document.getElementById('skip-second-btn');
+  const row = document.getElementById('stars-second-row');
+  if (state.skipSecond) {
+    btn.textContent = '✓ Übersprungen – nur eine Brust gestillt';
+    btn.classList.add('skipped');
+    row.style.opacity = '0.3'; row.style.pointerEvents = 'none';
+    updateStarUI('second', 0);
+  } else {
+    btn.textContent = 'Zweite Brust überspringen (eingeschlafen)';
+    btn.classList.remove('skipped');
+    row.style.opacity = '1'; row.style.pointerEvents = 'auto';
+  }
+}
+
+function setStars(which, val) {
+  if (which === 'first') state.starsFirst = val;
+  if (which === 'second' && !state.skipSecond) state.starsSecond = val;
+  updateStarUI(which, val);
+}
+
+function updateStarUI(which, val) {
+  const rowId = which === 'first' ? 'stars-first-row' : 'stars-second-row';
+  document.getElementById(rowId).querySelectorAll('.star-btn').forEach((b,i) => b.classList.toggle('selected', i < val));
+}
+
+function toggleCheck(which) {
+  state[which] = !state[which];
+  document.getElementById('cb-' + which).classList.toggle('checked', state[which]);
+}
+
+// SPEICHERN
+async function saveEntry() {
+  const msg = document.getElementById('save-msg');
+  if (!state.firstBreast) { msg.textContent = 'Bitte erste Brust auswählen.'; msg.className = 'save-msg error'; return; }
+  if (state.starsFirst === 0) { msg.textContent = 'Bitte Qualität der ersten Brust bewerten.'; msg.className = 'save-msg error'; return; }
+  const secondBreast = state.firstBreast === 'links' ? 'rechts' : 'links';
+  const dateVal = document.getElementById('entry-date').value;
+  const timeVal = document.getElementById('entry-time').value;
+  const recorded_at = new Date(dateVal + 'T' + timeVal + ':00').toISOString();
+  const tempVal = document.getElementById('temp-input').value;
+  const payload = {
+    user_id: currentSession.user.id,
+    recorded_at,
+    first_breast: state.firstBreast,
+    stars_first: state.starsFirst,
+    second_breast: state.skipSecond ? null : secondBreast,
+    stars_second: state.skipSecond || state.starsSecond === 0 ? null : state.starsSecond,
+    stool: state.stool,
+    urine: state.urine,
+    temperature: tempVal ? parseFloat(tempVal) : null,
+    vitamin_d: state.vitd,
+    notes: document.getElementById('notes-input').value || null
+  };
+  msg.textContent = 'Speichern...'; msg.className = 'save-msg';
+  try {
+    const res = await authFetch(API + '/feeding_sessions', {
+      method: 'POST',
+      headers: { 'Prefer': 'return=minimal' },
+      body: JSON.stringify(payload)
+    });
+    if (res.ok) {
+      msg.textContent = '✓ Session gespeichert!'; msg.className = 'save-msg success';
+      resetForm(); loadAllData();
+      setTimeout(() => { msg.textContent = ''; }, 3000);
+    } else {
+      const err = await res.json();
+      msg.textContent = 'Fehler: ' + (err.message || res.status); msg.className = 'save-msg error';
+    }
+  } catch(e) { msg.textContent = 'Verbindungsfehler'; msg.className = 'save-msg error'; }
+}
+
+function resetForm() {
+  state = { firstBreast: null, starsFirst: 0, starsSecond: 0, stool: false, urine: false, vitd: false, skipSecond: false };
+  ['first-links','first-rechts'].forEach(id => document.getElementById(id).classList.remove('selected'));
+  ['stars-first-row','stars-second-row'].forEach(id => document.getElementById(id).querySelectorAll('.star-btn').forEach(b => b.classList.remove('selected')));
+  ['cb-stool','cb-urine','cb-vitd'].forEach(id => document.getElementById(id).classList.remove('checked'));
+  document.getElementById('second-breast-section').style.display = 'none';
+  document.getElementById('temp-input').value = '';
+  document.getElementById('notes-input').value = '';
+  setDefaultDate();
+}
+
+// DATEN LADEN
+async function loadAllData() {
+  const today = new Date().toISOString().split('T')[0];
+  try {
+    const res = await authFetch(API + '/feeding_sessions?order=recorded_at.desc&limit=200', { headers: { 'Accept': 'application/json' } });
+    const all = await res.json();
+    if (!Array.isArray(all)) return;
+    const todayEntries = all.filter(e => e.recorded_at.startsWith(today));
+    const pastEntries = all.filter(e => !e.recorded_at.startsWith(today));
+    if (all.length > 0) { lastSessionTime = all[0].recorded_at; startTimer(); }
+    updateSummary(todayEntries);
+    updateNextHint(todayEntries);
+    renderEntries(todayEntries);
+    renderHistory(pastEntries);
+  } catch(e) { console.error(e); }
+}
+
+function updateSummary(entries) {
+  document.getElementById('sum-sessions').textContent = entries.length;
+  document.getElementById('sum-stool').textContent = entries.filter(e => e.stool).length;
+  document.getElementById('sum-urine').textContent = entries.filter(e => e.urine).length;
+  document.getElementById('sum-vitd').textContent = entries.some(e => e.vitamin_d) ? '✓' : '–';
+}
+
+function updateNextHint(entries) {
+  if (entries.length === 0) { document.getElementById('next-hint').style.display = 'none'; return; }
+  const last = entries[0];
+  const lastBreast = last.second_breast || last.first_breast;
+  const next = lastBreast === 'links' ? 'Rechts' : 'Links';
+  document.getElementById('next-hint').style.display = 'flex';
+  document.getElementById('next-hint-text').innerHTML = 'Nächste Session: <strong>' + next + ' zuerst</strong>';
+}
+
+function renderEntries(entries) {
+  const list = document.getElementById('entries-list');
+  if (entries.length === 0) { list.innerHTML = '<div style="text-align:center;color:var(--text-muted);font-size:14px;padding:20px 0">Noch keine Sessions heute</div>'; return; }
+  list.innerHTML = entries.map(e => entryCardHTML(e)).join('');
+}
+
+function entryCardHTML(e) {
+  const time = new Date(e.recorded_at).toLocaleTimeString('de-CH', { hour: '2-digit', minute: '2-digit' });
+  const stars1 = '⭐'.repeat(e.stars_first || 0);
+  const stars2 = e.stars_second ? '⭐'.repeat(e.stars_second) : '';
+  const breastInfo = e.second_breast
+    ? e.first_breast + ' ' + stars1 + ' → ' + e.second_breast + ' ' + stars2
+    : e.first_breast + ' ' + stars1 + ' (nur eine Brust)';
+  const badges = [];
+  if (e.stool) badges.push('💩');
+  if (e.urine) badges.push('💧');
+  if (e.vitamin_d) badges.push('☀️ Vit. D');
+  if (e.temperature) badges.push('🌡️ ' + e.temperature + '°C');
+  return '<div class="entry-card">'
+    + '<div class="entry-time">' + time + ' Uhr</div>'
+    + '<div class="entry-breasts">' + breastInfo + '</div>'
+    + (badges.length ? '<div class="entry-badges">' + badges.map(b => '<span class="badge">' + b + '</span>').join('') + '</div>' : '')
+    + (e.notes ? '<div style="font-size:12px;color:var(--text-muted);margin-top:6px">' + e.notes + '</div>' : '')
+    + '</div>';
+}
+
+function renderHistory(pastEntries) {
+  const list = document.getElementById('history-list');
+  if (pastEntries.length === 0) { list.innerHTML = '<div style="text-align:center;color:var(--text-muted);font-size:14px;padding:12px 0">Keine vergangenen Einträge</div>'; return; }
+  const byDay = {};
+  pastEntries.forEach(e => {
+    const day = e.recorded_at.split('T')[0];
+    if (!byDay[day]) byDay[day] = [];
+    byDay[day].push(e);
+  });
+  const days = Object.keys(byDay).sort((a,b) => b.localeCompare(a));
+  list.innerHTML = days.map(day => {
+    const entries = byDay[day];
+    const stool = entries.filter(e => e.stool).length;
+    const urine = entries.filter(e => e.urine).length;
+    const vitd = entries.some(e => e.vitamin_d);
+    const dateLabel = new Date(day + 'T12:00:00').toLocaleDateString('de-CH', { weekday: 'short', day: 'numeric', month: 'short' });
+    const bodyHTML = entries.map(e => entryCardHTML(e)).join('');
+    return '<div class="day-accordion">'
+      + '<div class="day-accordion-header" onclick="toggleDay(\'' + day + '\')">'
+      + '<div><div class="day-accordion-date">' + dateLabel + '</div>'
+      + '<div class="day-accordion-pills">'
+      + '<span class="day-pill">' + entries.length + ' Sessions</span>'
+      + (stool ? '<span class="day-pill">💩' + stool + '</span>' : '')
+      + (urine ? '<span class="day-pill">💧' + urine + '</span>' : '')
+      + (vitd ? '<span class="day-pill">☀️</span>' : '')
+      + '</div></div>'
+      + '<span class="day-accordion-arrow" id="arrow-' + day + '">▶</span>'
+      + '</div>'
+      + '<div class="day-accordion-body" id="body-' + day + '">' + bodyHTML + '</div>'
+      + '</div>';
+  }).join('');
+}
+
+function toggleDay(day) {
+  const body = document.getElementById('body-' + day);
+  const arrow = document.getElementById('arrow-' + day);
+  const isOpen = body.classList.contains('open');
+  body.classList.toggle('open', !isOpen);
+  arrow.classList.toggle('open', !isOpen);
+}
+</script>
+</body>
+</html>
