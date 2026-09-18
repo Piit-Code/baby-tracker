@@ -508,10 +508,11 @@ function updateSummary(entries) {
 function updateNextHint(entries) {
   if (!entries.length) { document.getElementById('next-hint').style.display = 'none'; return; }
   const last = entries[0];
-  // Immer die zuletzt gestillte Brust bestimmt die nächste Session
-  // Beide gestillt → zweite Brust war die letzte → nächste beginnt mit zweiter
-  // Nur eine gestillt → erste Brust war die letzte → nächste beginnt mit der anderen
-  const lastBreast = last.second_breast ? last.second_breast : last.first_breast;
+  // Beide Brüste gestillt → nächste Session beginnt mit second_breast
+  // Nur eine Brust → nächste Session beginnt mit der anderen Seite
+  const lastBreast = last.second_breast 
+    ? last.second_breast 
+    : (last.first_breast === 'links' ? 'rechts' : 'links');
   const next = lastBreast === 'links' ? 'Rechts' : 'Links';
   document.getElementById('next-hint').style.display = 'flex';
   document.getElementById('next-hint-text').innerHTML = 'Nächste Session: <strong>' + next + ' zuerst</strong>';
