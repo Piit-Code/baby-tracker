@@ -244,7 +244,8 @@
     </div>
 
     <button class="btn-save" onclick="saveEntry()">Session speichern</button>
-    <button onclick="exportCSV()" style="width:100%;padding:14px;background:var(--beige-dark);color:var(--brown);border:1.5px solid var(--beige-border);border-radius:14px;font-size:15px;font-weight:600;cursor:pointer;margin-bottom:8px">📥 Export CSV (Hebamme / Backup)</button>
+    <button onclick="exportCSV()" style="width:100%;padding:14px;background:var(--beige-dark);color:var(--brown);border:1.5px solid var(--beige-border);border-radius:14px;font-size:15px;font-weight:600;cursor:pointer;margin-bottom:6px">📥 Export CSV (Hebamme / Backup)</button>
+    <div id="letztes-backup" style="text-align:center;font-size:11px;color:var(--text-muted);margin-bottom:8px"></div>
     <div class="save-msg" id="save-msg"></div>
   </div>
 
@@ -407,6 +408,12 @@ function showApp() {
   document.getElementById('app-screen').style.display = 'block';
   buildTimeOptions('entry-time', null);
   document.getElementById('entry-date').value = new Date().toISOString().split('T')[0];
+  // Letztes Backup laden
+  try {
+    const ts = localStorage.getItem('baby_tracker_last_backup');
+    const el = document.getElementById('letztes-backup');
+    if (ts && el) el.textContent = 'Letztes Backup: ' + ts;
+  } catch(e) {}
   loadAllData();
 }
 
@@ -682,6 +689,12 @@ function exportCSV() {
   a.download = 'baby-tracker-' + today + '.csv';
   a.click();
   URL.revokeObjectURL(url);
+  // Backup Timestamp speichern
+  const now = new Date();
+  const ts = now.toLocaleDateString('de-CH') + ' ' + now.toLocaleTimeString('de-CH', { hour: '2-digit', minute: '2-digit' });
+  try { localStorage.setItem('baby_tracker_last_backup', ts); } catch(e) {}
+  const el = document.getElementById('letztes-backup');
+  if (el) el.textContent = 'Letztes Backup: ' + ts;
 }
 </script>
 </body>
