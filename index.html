@@ -44,7 +44,7 @@
   .timer-label { font-size: 12px; color: var(--text-muted); }
   .timer-value { font-size: 16px; font-weight: 700; color: var(--mint-dark); }
 
-  .day-summary { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+  .day-summary { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; }
   .summary-pill { background: var(--mint-light); border-radius: 10px; padding: 8px 6px; text-align: center; }
   .summary-pill .pill-val { font-size: 18px; font-weight: 700; color: var(--mint-dark); display: block; }
   .summary-pill .pill-label { font-size: 10px; color: var(--text-muted); display: block; margin-top: 2px; }
@@ -164,10 +164,11 @@
       <span class="timer-label">ago</span>
     </div>
     <div class="day-summary">
-      <div class="summary-pill"><span class="pill-val" id="sum-sessions">–</span><span class="pill-label">Sessions</span></div>
+      <div class="summary-pill"><span class="pill-val" id="sum-sessions">–</span><span class="pill-label">Stillen</span></div>
       <div class="summary-pill"><span class="pill-val" id="sum-stool">–</span><span class="pill-label">💩</span></div>
       <div class="summary-pill"><span class="pill-val" id="sum-urine">–</span><span class="pill-label">💧</span></div>
       <div class="summary-pill"><span class="pill-val" id="sum-vitd">–</span><span class="pill-label">Vit. D</span></div>
+      <div class="summary-pill"><span class="pill-val" id="sum-pflege">–</span><span class="pill-label">🧴 Pflege</span></div>
     </div>
   </div>
 
@@ -231,6 +232,10 @@
       <div class="check-row">
         <div class="big-checkbox" id="cb-vitd" onclick="toggleCheck('vitd')">☀️</div>
         <div><div class="check-label">Vitamin D</div><div class="check-sub">Heute gegeben</div></div>
+      </div>
+      <div class="check-row">
+        <div class="big-checkbox" id="cb-pflege" onclick="toggleCheck('pflege')">🧴</div>
+        <div><div class="check-label">Körperpflege</div><div class="check-sub">Haut geölt, Nägel gepflegt</div></div>
       </div>
       <div class="check-row" style="border-bottom:none">
         <div class="temp-row">
@@ -332,7 +337,7 @@ const LS_SESSION = 'baby_tracker_session';
 let currentSession = null;
 let lastSessionTime = null;
 let timerInterval = null;
-let state = { firstBreast: null, starsFirst: 0, starsSecond: 0, stool: false, urine: false, vomit: false, vitd: false, skipSecond: false };
+let state = { firstBreast: null, starsFirst: 0, starsSecond: 0, stool: false, urine: false, vomit: false, vitd: false, pflege: false, skipSecond: false };
 let editState = { firstBreast: null, starsFirst: 0, starsSecond: 0, stool: false, urine: false, vomit: false, vitd: false, skipSecond: false };
 
 // SESSION PERSISTENZ
@@ -465,12 +470,14 @@ function toggleCheck(which) { state[which] = !state[which]; document.getElementB
 // SPEICHERN
 async function saveEntry() {
   const msg = document.getElementById('save-msg');
-  if (!state.firstBreast) { msg.textContent = 'Bitte erste Brust auswählen.'; msg.className = 'save-msg error'; return; }
-  if (state.starsFirst === 0) { msg.textContent = 'Bitte Qualität der ersten Brust bewerten.'; msg.className = 'save-msg error'; return; }
-  const secondBreast = state.firstBreast === 'links' ? 'rechts' : 'links';
+  // Stillen ist optional – aber wenn erste Brust gewählt, braucht es Sterne
+  if (state.firstBreast && state.starsFirst === 0) { msg.textContent = 'Bitte Qualität der ersten Brust bewerten.'; msg.className = 'save-msg error'; return; }
+  // Prüfen ob überhaupt etwas erfasst wurde
+  if (!state.firstBreast && !state.stool && !state.urine && !state.vomit && !state.vitd && !state.pflege) { msg.textContent = 'Bitte mindestens ein Feld ausfüllen.'; msg.className = 'save-msg error'; return; }
+  const secondBreast = state.firstBreast ? (state.firstBreast === 'links' ? 'rechts' : 'links') : null;
   const recorded_at = new Date(document.getElementById('entry-date').value + 'T' + document.getElementById('entry-time').value + ':00').toISOString();
   const tempVal = document.getElementById('temp-input').value;
-  const payload = { user_id: currentSession.user.id, recorded_at, first_breast: state.firstBreast, stars_first: state.starsFirst, second_breast: state.skipSecond ? null : secondBreast, stars_second: state.skipSecond || state.starsSecond === 0 ? null : state.starsSecond, stool: state.stool, urine: state.urine, vomit: state.vomit, temperature: tempVal ? parseFloat(tempVal) : null, vitamin_d: state.vitd, notes: document.getElementById('notes-input').value || null };
+  const payload = { user_id: currentSession.user.id, recorded_at, first_breast: state.firstBreast, stars_first: state.starsFirst, second_breast: state.skipSecond ? null : secondBreast, stars_second: state.skipSecond || state.starsSecond === 0 ? null : state.starsSecond, stool: state.stool, urine: state.urine, vomit: state.vomit, skin_care: state.pflege, temperature: tempVal ? parseFloat(tempVal) : null, vitamin_d: state.vitd, notes: document.getElementById('notes-input').value || null };
   msg.textContent = 'Speichern...'; msg.className = 'save-msg';
   try {
     const res = await authFetch(API + '/feeding_sessions', { method: 'POST', headers: { 'Prefer': 'return=minimal' }, body: JSON.stringify(payload) });
@@ -483,7 +490,7 @@ function resetForm() {
   state = { firstBreast: null, starsFirst: 0, starsSecond: 0, stool: false, urine: false, vomit: false, vitd: false, skipSecond: false };
   ['first-links','first-rechts'].forEach(id => document.getElementById(id).classList.remove('selected'));
   ['stars-first-row','stars-second-row'].forEach(id => document.getElementById(id).querySelectorAll('.star-btn').forEach(b => b.classList.remove('selected')));
-  ['cb-stool','cb-urine','cb-vomit','cb-vitd'].forEach(id => document.getElementById(id).classList.remove('checked'));
+  ['cb-stool','cb-urine','cb-vomit','cb-vitd','cb-pflege'].forEach(id => document.getElementById(id).classList.remove('checked'));
   document.getElementById('second-breast-section').style.display = 'none';
   document.getElementById('temp-input').value = '';
   document.getElementById('notes-input').value = '';
@@ -500,7 +507,8 @@ async function loadAllData() {
     if (!Array.isArray(all)) return;
     const todayEntries = all.filter(e => e.recorded_at.startsWith(today));
     const pastEntries = all.filter(e => !e.recorded_at.startsWith(today));
-    if (all.length > 0) { lastSessionTime = all[0].recorded_at; startTimer(); }
+    const stillOnly = all.filter(e => e.first_breast);
+  if (stillOnly.length > 0) { lastSessionTime = stillOnly[0].recorded_at; startTimer(); }
     updateSummary(todayEntries);
     updateNextHint(todayEntries);
     renderEntries(todayEntries, 'entries-list', all);
@@ -509,15 +517,19 @@ async function loadAllData() {
 }
 
 function updateSummary(entries) {
-  document.getElementById('sum-sessions').textContent = entries.length;
+  // Nur Einträge mit Stillen als Sessions zählen
+  const stillSessions = entries.filter(e => e.first_breast);
+  document.getElementById('sum-sessions').textContent = stillSessions.length;
   document.getElementById('sum-stool').textContent = entries.filter(e => e.stool).length;
   document.getElementById('sum-urine').textContent = entries.filter(e => e.urine).length;
   document.getElementById('sum-vitd').textContent = entries.some(e => e.vitamin_d) ? '✓' : '–';
+  document.getElementById('sum-pflege').textContent = entries.some(e => e.skin_care) ? '✓' : '–';
 }
 
 function updateNextHint(entries) {
-  if (!entries.length) { document.getElementById('next-hint').style.display = 'none'; return; }
-  const last = entries[0];
+  const stillEntries = entries.filter(e => e.first_breast);
+  if (!stillEntries.length) { document.getElementById('next-hint').style.display = 'none'; return; }
+  const last = stillEntries[0];
   // Beide Brüste gestillt → nächste Session = second_breast (direkt, keine Umkehrung)
   // Nur eine Brust → nächste Session = andere Seite von first_breast
   let next;
@@ -550,6 +562,7 @@ function entryCardHTML(e, allEntries) {
   if (e.urine) badges.push('💧');
   if (e.vomit) badges.push('🤮');
   if (e.vitamin_d) badges.push('☀️ Vit. D');
+  if (e.skin_care) badges.push('🧴 Pflege');
   if (e.temperature) badges.push('🌡️ ' + e.temperature + '°C');
   const gap = allEntries ? getGap(e, allEntries) : null;
   return '<div class="entry-card">'
@@ -580,6 +593,7 @@ function renderHistory(pastEntries, allEntries) {
     const urine = entries.filter(e => e.urine).length;
     const vomit = entries.filter(e => e.vomit).length;
     const vitd = entries.some(e => e.vitamin_d);
+    const pflege = entries.some(e => e.skin_care);
     const dateLabel = new Date(day + 'T12:00:00').toLocaleDateString('de-CH', { weekday: 'short', day: 'numeric', month: 'short' });
     return '<div class="day-accordion">'
       + '<div class="day-accordion-header" onclick="toggleDay(\'' + day + '\')">'
@@ -589,6 +603,7 @@ function renderHistory(pastEntries, allEntries) {
       + (urine ? '<span class="day-pill">💧' + urine + '</span>' : '')
       + (vomit ? '<span class="day-pill">🤮' + vomit + '</span>' : '')
       + (vitd ? '<span class="day-pill">☀️</span>' : '')
+      + (pflege ? '<span class="day-pill">🧴</span>' : '')
       + '</div></div><span class="day-accordion-arrow" id="arrow-' + day + '">▶</span></div>'
       + '<div class="day-accordion-body" id="body-' + day + '">' + entries.map(e => entryCardHTML(e, allEntries)).join('') + '</div></div>';
   }).join('');
@@ -656,7 +671,8 @@ async function loadAllData() {
     allEntriesCache = all;
     const todayEntries = all.filter(e => e.recorded_at.startsWith(today));
     const pastEntries = all.filter(e => !e.recorded_at.startsWith(today));
-    if (all.length > 0) { lastSessionTime = all[0].recorded_at; startTimer(); }
+    const stillOnly = all.filter(e => e.first_breast);
+  if (stillOnly.length > 0) { lastSessionTime = stillOnly[0].recorded_at; startTimer(); }
     updateSummary(todayEntries);
     updateNextHint(todayEntries);
     renderEntries(todayEntries, 'entries-list', all);
