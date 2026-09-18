@@ -244,6 +244,7 @@
     </div>
 
     <button class="btn-save" onclick="saveEntry()">Session speichern</button>
+    <button onclick="exportCSV()" style="width:100%;padding:14px;background:var(--beige-dark);color:var(--brown);border:1.5px solid var(--beige-border);border-radius:14px;font-size:15px;font-weight:600;cursor:pointer;margin-bottom:8px">📥 Export CSV (Hebamme / Backup)</button>
     <div class="save-msg" id="save-msg"></div>
   </div>
 
@@ -507,7 +508,11 @@ function updateSummary(entries) {
 function updateNextHint(entries) {
   if (!entries.length) { document.getElementById('next-hint').style.display = 'none'; return; }
   const last = entries[0];
-  const next = (last.second_breast || last.first_breast) === 'links' ? 'Rechts' : 'Links';
+  // Immer die zuletzt gestillte Brust bestimmt die nächste Session
+  // Beide gestillt → zweite Brust war die letzte → nächste beginnt mit zweiter
+  // Nur eine gestillt → erste Brust war die letzte → nächste beginnt mit der anderen
+  const lastBreast = last.second_breast ? last.second_breast : last.first_breast;
+  const next = lastBreast === 'links' ? 'Rechts' : 'Links';
   document.getElementById('next-hint').style.display = 'flex';
   document.getElementById('next-hint-text').innerHTML = 'Nächste Session: <strong>' + next + ' zuerst</strong>';
 }
@@ -644,6 +649,38 @@ async function loadAllData() {
     renderEntries(todayEntries, 'entries-list', all);
     renderHistory(pastEntries, all);
   } catch(e) { console.error(e); }
+}
+
+function exportCSV() {
+  if (!allEntriesCache.length) { alert('Keine Daten vorhanden.'); return; }
+  const headers = ['Datum','Uhrzeit','Erste Brust','Sterne Erste','Zweite Brust','Sterne Zweite','Stuhlgang','Urin','Erbrechen','Vitamin D','Temperatur °C','Bemerkung'];
+  const rows = allEntriesCache.map(e => {
+    const dt = new Date(e.recorded_at);
+    const datum = dt.toLocaleDateString('de-CH');
+    const uhrzeit = dt.toLocaleTimeString('de-CH', { hour: '2-digit', minute: '2-digit' });
+    return [
+      datum, uhrzeit,
+      e.first_breast || '',
+      e.stars_first || '',
+      e.second_breast || '',
+      e.stars_second || '',
+      e.stool ? 'Ja' : 'Nein',
+      e.urine ? 'Ja' : 'Nein',
+      e.vomit ? 'Ja' : 'Nein',
+      e.vitamin_d ? 'Ja' : 'Nein',
+      e.temperature || '',
+      e.notes || ''
+    ].map(v => '"' + String(v).replace(/"/g, '""') + '"').join(',');
+  });
+  const csv = [headers.join(','), ...rows].join('\n');
+  const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  const today = new Date().toISOString().split('T')[0];
+  a.download = 'baby-tracker-' + today + '.csv';
+  a.click();
+  URL.revokeObjectURL(url);
 }
 </script>
 </body>
