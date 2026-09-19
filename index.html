@@ -631,7 +631,8 @@ async function openEdit(id) {
   if (!e) return;
   document.getElementById('edit-id').value = id;
   const dt = new Date(e.recorded_at);
-  document.getElementById('edit-date').value = dt.toISOString().split('T')[0];
+  const editDate = dt.getFullYear() + '-' + String(dt.getMonth()+1).padStart(2,'0') + '-' + String(dt.getDate()).padStart(2,'0');
+  document.getElementById('edit-date').value = editDate;
   const hh = String(dt.getHours()).padStart(2,'0');
   const mm = String(Math.round(dt.getMinutes()/15)*15 % 60).padStart(2,'0');
   buildTimeOptions('edit-time', hh + ':' + mm);
