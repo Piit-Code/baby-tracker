@@ -412,9 +412,13 @@ async function handleSignup() {
 
 function handleLogout() { currentSession = null; clearSessionLocal(); clearInterval(timerInterval); document.getElementById('login-screen').style.display = 'flex'; document.getElementById('app-screen').style.display = 'none'; }
 
-function localDateStr() {
-  const d = new Date();
-  return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+function localDateStr(d) {
+  const dt = d || new Date();
+  return dt.getFullYear() + '-' + String(dt.getMonth()+1).padStart(2,'0') + '-' + String(dt.getDate()).padStart(2,'0');
+}
+
+function entryLocalDate(e) {
+  return localDateStr(new Date(e.recorded_at));
 }
 
 function showApp() {
@@ -511,8 +515,8 @@ async function loadAllData() {
     const res = await authFetch(API + '/feeding_sessions?order=recorded_at.desc&limit=500', { headers: { 'Accept': 'application/json' } });
     const all = await res.json();
     if (!Array.isArray(all)) return;
-    const todayEntries = all.filter(e => e.recorded_at.startsWith(today));
-    const pastEntries = all.filter(e => !e.recorded_at.startsWith(today));
+    const todayEntries = all.filter(e => entryLocalDate(e) === today);
+    const pastEntries = all.filter(e => entryLocalDate(e) !== today);
     const stillOnly = all.filter(e => e.first_breast);
   if (stillOnly.length > 0) { lastSessionTime = stillOnly[0].recorded_at; startTimer(); }
     updateSummary(todayEntries);
@@ -595,7 +599,7 @@ function renderHistory(pastEntries, allEntries) {
   const list = document.getElementById('history-list');
   if (!pastEntries.length) { list.innerHTML = '<div style="text-align:center;color:var(--text-muted);font-size:14px;padding:12px 0">Keine vergangenen Einträge</div>'; return; }
   const byDay = {};
-  pastEntries.forEach(e => { const day = e.recorded_at.split('T')[0]; if (!byDay[day]) byDay[day] = []; byDay[day].push(e); });
+  pastEntries.forEach(e => { const day = entryLocalDate(e); if (!byDay[day]) byDay[day] = []; byDay[day].push(e); });
   const days = Object.keys(byDay).sort((a,b) => b.localeCompare(a));
   list.innerHTML = days.map(day => {
     const entries = byDay[day];
@@ -681,8 +685,8 @@ async function loadAllData() {
     const all = await res.json();
     if (!Array.isArray(all)) return;
     allEntriesCache = all;
-    const todayEntries = all.filter(e => e.recorded_at.startsWith(today));
-    const pastEntries = all.filter(e => !e.recorded_at.startsWith(today));
+    const todayEntries = all.filter(e => entryLocalDate(e) === today);
+    const pastEntries = all.filter(e => entryLocalDate(e) !== today);
     const stillOnly = all.filter(e => e.first_breast);
   if (stillOnly.length > 0) { lastSessionTime = stillOnly[0].recorded_at; startTimer(); }
     updateSummary(todayEntries);
