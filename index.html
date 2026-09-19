@@ -309,6 +309,7 @@
         <div class="big-checkbox" id="edit-cb-urine" onclick="editToggle('urine')" style="width:52px;height:52px;font-size:24px">💧</div>
         <div class="big-checkbox" id="edit-cb-vomit" onclick="editToggle('vomit')" style="width:52px;height:52px;font-size:24px">🤮</div>
         <div class="big-checkbox" id="edit-cb-vitd" onclick="editToggle('vitd')" style="width:52px;height:52px;font-size:24px">☀️</div>
+        <div class="big-checkbox" id="edit-cb-pflege" onclick="editToggle('pflege')" style="width:52px;height:52px;font-size:24px">🧴</div>
       </div>
     </div>
     <div class="modal-row">
@@ -338,7 +339,7 @@ let currentSession = null;
 let lastSessionTime = null;
 let timerInterval = null;
 let state = { firstBreast: null, starsFirst: 0, starsSecond: 0, stool: false, urine: false, vomit: false, vitd: false, pflege: false, skipSecond: false };
-let editState = { firstBreast: null, starsFirst: 0, starsSecond: 0, stool: false, urine: false, vomit: false, vitd: false, skipSecond: false };
+let editState = { firstBreast: null, starsFirst: 0, starsSecond: 0, stool: false, urine: false, vomit: false, vitd: false, pflege: false, skipSecond: false };
 
 // SESSION PERSISTENZ
 function saveSessionLocal(s) { try { localStorage.setItem(LS_SESSION, JSON.stringify(s)); } catch(e) {} }
@@ -642,7 +643,8 @@ async function openEdit(id) {
   document.getElementById('edit-second-label').textContent = 'Automatisch: ' + (e.first_breast === 'links' ? 'Rechts 👉' : '👈 Links');
   document.getElementById('edit-stars-first-row').querySelectorAll('.star-btn').forEach((b,i) => b.classList.toggle('selected', i < editState.starsFirst));
   document.getElementById('edit-stars-second-row').querySelectorAll('.star-btn').forEach((b,i) => b.classList.toggle('selected', i < editState.starsSecond));
-  ['stool','urine','vomit','vitd'].forEach(k => document.getElementById('edit-cb-' + k).classList.toggle('checked', editState[k]));
+  editState.pflege = e.skin_care || false;
+  ['stool','urine','vomit','vitd','pflege'].forEach(k => document.getElementById('edit-cb-' + k).classList.toggle('checked', editState[k]));
   document.getElementById('edit-temp').value = e.temperature || '';
   document.getElementById('edit-notes').value = e.notes || '';
   const skipBtn = document.getElementById('edit-skip-btn');
@@ -662,7 +664,7 @@ async function saveEdit() {
   const secondBreast = editState.firstBreast === 'links' ? 'rechts' : 'links';
   const recorded_at = new Date(document.getElementById('edit-date').value + 'T' + document.getElementById('edit-time').value + ':00').toISOString();
   const tempVal = document.getElementById('edit-temp').value;
-  const payload = { recorded_at, first_breast: editState.firstBreast, stars_first: editState.starsFirst, second_breast: editState.skipSecond ? null : secondBreast, stars_second: editState.skipSecond || editState.starsSecond === 0 ? null : editState.starsSecond, stool: editState.stool, urine: editState.urine, vomit: editState.vomit, temperature: tempVal ? parseFloat(tempVal) : null, vitamin_d: editState.vitd, notes: document.getElementById('edit-notes').value || null };
+  const payload = { recorded_at, first_breast: editState.firstBreast, stars_first: editState.starsFirst, second_breast: editState.skipSecond ? null : secondBreast, stars_second: editState.skipSecond || editState.starsSecond === 0 ? null : editState.starsSecond, stool: editState.stool, urine: editState.urine, vomit: editState.vomit, temperature: tempVal ? parseFloat(tempVal) : null, vitamin_d: editState.vitd, skin_care: editState.pflege, notes: document.getElementById('edit-notes').value || null };
   try {
     const res = await authFetch(API + '/feeding_sessions?id=eq.' + id, { method: 'PATCH', headers: { 'Prefer': 'return=minimal' }, body: JSON.stringify(payload) });
     if (res.ok) { closeEdit(); loadAllData(); }
