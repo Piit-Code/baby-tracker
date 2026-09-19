@@ -411,11 +411,16 @@ async function handleSignup() {
 
 function handleLogout() { currentSession = null; clearSessionLocal(); clearInterval(timerInterval); document.getElementById('login-screen').style.display = 'flex'; document.getElementById('app-screen').style.display = 'none'; }
 
+function localDateStr() {
+  const d = new Date();
+  return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+}
+
 function showApp() {
   document.getElementById('login-screen').style.display = 'none';
   document.getElementById('app-screen').style.display = 'block';
   buildTimeOptions('entry-time', null);
-  document.getElementById('entry-date').value = new Date().toISOString().split('T')[0];
+  document.getElementById('entry-date').value = localDateStr();
   // Letztes Backup laden
   try {
     const ts = localStorage.getItem('baby_tracker_last_backup');
@@ -494,13 +499,13 @@ function resetForm() {
   document.getElementById('second-breast-section').style.display = 'none';
   document.getElementById('temp-input').value = '';
   document.getElementById('notes-input').value = '';
-  document.getElementById('entry-date').value = new Date().toISOString().split('T')[0];
+  document.getElementById('entry-date').value = localDateStr();
   buildTimeOptions('entry-time', null);
 }
 
 // DATEN LADEN
 async function loadAllData() {
-  const today = new Date().toISOString().split('T')[0];
+  const today = localDateStr();
   try {
     const res = await authFetch(API + '/feeding_sessions?order=recorded_at.desc&limit=500', { headers: { 'Accept': 'application/json' } });
     const all = await res.json();
@@ -554,9 +559,6 @@ function getGap(entry, allEntries) {
 
 function entryCardHTML(e, allEntries) {
   const time = new Date(e.recorded_at).toLocaleTimeString('de-CH', { hour: '2-digit', minute: '2-digit' });
-  const stars1 = '⭐'.repeat(e.stars_first || 0);
-  const stars2 = e.stars_second ? '⭐'.repeat(e.stars_second) : '';
-  const breastInfo = e.second_breast ? e.first_breast + ' ' + stars1 + ' → ' + e.second_breast + ' ' + stars2 : e.first_breast + ' ' + stars1 + ' (nur eine Brust)';
   const badges = [];
   if (e.stool) badges.push('💩');
   if (e.urine) badges.push('💧');
@@ -565,11 +567,18 @@ function entryCardHTML(e, allEntries) {
   if (e.skin_care) badges.push('🧴 Pflege');
   if (e.temperature) badges.push('🌡️ ' + e.temperature + '°C');
   const gap = allEntries ? getGap(e, allEntries) : null;
+  let mainContent = '';
+  if (e.first_breast) {
+    const stars1 = '⭐'.repeat(e.stars_first || 0);
+    const stars2 = e.stars_second ? '⭐'.repeat(e.stars_second) : '';
+    const breastInfo = e.second_breast ? e.first_breast + ' ' + stars1 + ' → ' + e.second_breast + ' ' + stars2 : e.first_breast + ' ' + stars1 + ' (nur eine Brust)';
+    mainContent = '<div class="entry-breasts">' + breastInfo + '</div>';
+  }
   return '<div class="entry-card">'
     + '<div class="entry-time-row"><span class="entry-time">' + time + ' Uhr</span>'
     + (gap ? '<span class="entry-gap">⏱ ' + gap + ' später</span>' : '')
     + '<button onclick="openEdit(\'' + e.id + '\')" style="background:none;border:none;font-size:16px;cursor:pointer;color:var(--text-muted);padding:0 0 0 8px">✏️</button></div>'
-    + '<div class="entry-breasts">' + breastInfo + '</div>'
+    + mainContent
     + (badges.length ? '<div class="entry-badges">' + badges.map(b => '<span class="badge">' + b + '</span>').join('') + '</div>' : '')
     + (e.notes ? '<div style="font-size:12px;color:var(--text-muted);margin-top:6px">' + e.notes + '</div>' : '')
     + '</div>';
@@ -663,7 +672,7 @@ async function saveEdit() {
 // Cache für Edit
 const origLoadAllData = loadAllData;
 async function loadAllData() {
-  const today = new Date().toISOString().split('T')[0];
+  const today = localDateStr();
   try {
     const res = await authFetch(API + '/feeding_sessions?order=recorded_at.desc&limit=500', { headers: { 'Accept': 'application/json' } });
     const all = await res.json();
@@ -706,7 +715,7 @@ function exportCSV() {
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
-  const today = new Date().toISOString().split('T')[0];
+  const today = localDateStr();
   a.download = 'baby-tracker-' + today + '.csv';
   a.click();
   URL.revokeObjectURL(url);
