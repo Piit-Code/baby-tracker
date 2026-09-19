@@ -164,11 +164,11 @@
       <span class="timer-label">ago</span>
     </div>
     <div class="day-summary">
-      <div class="summary-pill"><span class="pill-val" id="sum-sessions">–</span><span class="pill-label">Stillen</span></div>
+      <div class="summary-pill"><span class="pill-val" id="sum-sessions">–</span><span class="pill-label">🍼</span></div>
       <div class="summary-pill"><span class="pill-val" id="sum-stool">–</span><span class="pill-label">💩</span></div>
       <div class="summary-pill"><span class="pill-val" id="sum-urine">–</span><span class="pill-label">💧</span></div>
-      <div class="summary-pill"><span class="pill-val" id="sum-vitd">–</span><span class="pill-label">Vit. D</span></div>
-      <div class="summary-pill"><span class="pill-val" id="sum-pflege">–</span><span class="pill-label">🧴 Pflege</span></div>
+      <div class="summary-pill"><span class="pill-val" id="sum-vitd">–</span><span class="pill-label">☀️</span></div>
+      <div class="summary-pill"><span class="pill-val" id="sum-pflege">–</span><span class="pill-label">🧴</span></div>
     </div>
   </div>
 
@@ -258,7 +258,7 @@
   </div>
 
   <div class="entries-section">
-    <div class="entries-title">Heutige Sessions</div>
+    <div class="entries-title">Heute</div>
     <div id="entries-list"></div>
   </div>
 
@@ -591,7 +591,7 @@ function entryCardHTML(e, allEntries) {
 
 function renderEntries(entries, containerId, allEntries) {
   const list = document.getElementById(containerId);
-  if (!entries.length) { list.innerHTML = '<div style="text-align:center;color:var(--text-muted);font-size:14px;padding:20px 0">Noch keine Sessions heute</div>'; return; }
+  if (!entries.length) { list.innerHTML = '<div style="text-align:center;color:var(--text-muted);font-size:14px;padding:20px 0">Noch keine Einträge heute</div>'; return; }
   list.innerHTML = entries.map(e => entryCardHTML(e, allEntries)).join('');
 }
 
@@ -603,6 +603,7 @@ function renderHistory(pastEntries, allEntries) {
   const days = Object.keys(byDay).sort((a,b) => b.localeCompare(a));
   list.innerHTML = days.map(day => {
     const entries = byDay[day];
+    const still = entries.filter(e => e.first_breast).length;
     const stool = entries.filter(e => e.stool).length;
     const urine = entries.filter(e => e.urine).length;
     const vomit = entries.filter(e => e.vomit).length;
@@ -612,7 +613,8 @@ function renderHistory(pastEntries, allEntries) {
     return '<div class="day-accordion">'
       + '<div class="day-accordion-header" onclick="toggleDay(\'' + day + '\')">'
       + '<div><div class="day-accordion-date">' + dateLabel + '</div>'
-      + '<div class="day-accordion-pills"><span class="day-pill">' + entries.length + ' Sessions</span>'
+      + '<div class="day-accordion-pills">'
+      + (still ? '<span class="day-pill">🍼' + still + '</span>' : '')
       + (stool ? '<span class="day-pill">💩' + stool + '</span>' : '')
       + (urine ? '<span class="day-pill">💧' + urine + '</span>' : '')
       + (vomit ? '<span class="day-pill">🤮' + vomit + '</span>' : '')
