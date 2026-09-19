@@ -477,7 +477,7 @@ async function saveEntry() {
   const secondBreast = state.firstBreast ? (state.firstBreast === 'links' ? 'rechts' : 'links') : null;
   const recorded_at = new Date(document.getElementById('entry-date').value + 'T' + document.getElementById('entry-time').value + ':00').toISOString();
   const tempVal = document.getElementById('temp-input').value;
-  const payload = { user_id: currentSession.user.id, recorded_at, first_breast: state.firstBreast, stars_first: state.starsFirst, second_breast: state.skipSecond ? null : secondBreast, stars_second: state.skipSecond || state.starsSecond === 0 ? null : state.starsSecond, stool: state.stool, urine: state.urine, vomit: state.vomit, skin_care: state.pflege, temperature: tempVal ? parseFloat(tempVal) : null, vitamin_d: state.vitd, notes: document.getElementById('notes-input').value || null };
+  const payload = { user_id: currentSession.user.id, recorded_at, first_breast: state.firstBreast || null, stars_first: state.firstBreast ? state.starsFirst : null, second_breast: state.skipSecond ? null : secondBreast, stars_second: state.skipSecond || state.starsSecond === 0 ? null : state.starsSecond, stool: state.stool, urine: state.urine, vomit: state.vomit, skin_care: state.pflege, temperature: tempVal ? parseFloat(tempVal) : null, vitamin_d: state.vitd, notes: document.getElementById('notes-input').value || null };
   msg.textContent = 'Speichern...'; msg.className = 'save-msg';
   try {
     const res = await authFetch(API + '/feeding_sessions', { method: 'POST', headers: { 'Prefer': 'return=minimal' }, body: JSON.stringify(payload) });
